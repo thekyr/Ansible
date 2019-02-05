@@ -1,0 +1,9 @@
+---
+- hosts: elasticsearch
+  user: centos
+  become_user: root
+  become: yes
+  #serial: 1
+
+  roles:
+   - elasticsearch
