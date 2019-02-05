@@ -1,0 +1,8 @@
+---
+## Forwarder
+
+- template: src=forward_es.conf.j2 dest=/etc/td-agent/config.d/forward_es.conf owner=td-agent group=td-agent mode=644
+  notify: restart td-agent
+
+- template: src=forward_prometheus.conf.j2 dest=/etc/td-agent/config.d/forward_prometheus.conf owner=td-agent group=td-agent mode=644
+  notify: restart td-agent

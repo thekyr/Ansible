@@ -1,0 +1,16 @@
+---
+
+# Nginx
+- copy: src=files/nginx.conf dest=/etc/td-agent/config.d/nginx.conf owner=td-agent group=td-agent mode=644
+  notify: restart td-agent
+  when: "'nginx' in group_names"
+
+# Cassandra
+- copy: src=files/cassandra.conf dest=/etc/td-agent/config.d/cassandra.conf owner=td-agent group=td-agent mode=644
+  notify: restart td-agent
+  when: "'cassandra' in group_names"
+
+# LDAP
+- copy: src=files/ldap.conf dest=/etc/td-agent/config.d/ldap.conf owner=td-agent group=td-agent mode=644
+  notify: restart td-agent
+  when: "'ldap' in group_names"

@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+<match **>
+  @type elasticsearch
+  logstash_format true
+  hosts http://{{ es_user }}:{{ es_password }}@{{ hostvars['elasticsearch-1']['m2m'] }}:9200,http://{{ es_user }}:{{ es_password }}@{{ hostvars['elasticsearch-2']['m2m'] }}:9200,http://{{ es_user }}:{{ es_password }}@{{ hostvars['elasticsearch-3']['m2m'] }}:9200
+  logstash_prefix fluentd
+  include_tag_key
+  <buffer tag,time>
+    @type file
+    path /var/log/td-agent/buffer
+    flush_thread_count 8
+    timekey 1h # chunks per hours ("3600" also available)
+  </buffer>
+</match>

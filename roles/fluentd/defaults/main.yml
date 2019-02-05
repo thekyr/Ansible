@@ -1,0 +1,28 @@
+# Installation variables
+# user & group
+td_user: td-agent
+td_group: td-agent
+
+#version
+td_version: "3"
+
+#paths
+td_conf_path: "/etc/td-agent"
+td_config_d: "{{ td_conf_path }}/config.d"
+td_log_path: "/var/log/td-agent"
+td_log_file: "{{ td_log_path }}/td-agent.log"
+td_pos_path: "{{ td_log_path }}/pos"
+td_buffer_path: "{{ td_log_path }}/buffer"
+
+#plugins
+td_plugins: ["fluent-plugin-elasticsearch", "fluent-plugin-multiprocess", "fluent-plugin-prometheus", "fluent-plugin-grok-parser"]
+
+# Service variables
+td_service_state: started # current state: started, stopped, restarted, reloaded
+td_service_enabled: yes # yes, no
+
+#elasticsearch variables
+es_fqdn: "{{ hostvars['elasticsearch-coordinator']['m2m'] }}"
+es_port: 9200
+es_user: elastic
+es_password: changeme

@@ -1,0 +1,164 @@
+---
+  - name: Add TreasureData GPG key
+    rpm_key:
+      key: https://packages.treasuredata.com/GPG-KEY-td-agent
+      state: present
+    tags: 
+     - td-agent
+     - repo
+  
+  - name: Add TreasureData repository
+    template:
+      src: treasuredata.repo.j2
+      dest: /etc/yum.repos.d/td.repo
+      mode: 0644
+    tags: 
+     - td-agent
+     - repo
+  
+  - name: td-agent Create fluentd group
+    group:
+      name: "{{ td_group }}"
+      state: present
+    tags: 
+     - td-agent
+  
+  - name: td-agent Create fluentd user
+    user:
+      name: "{{ td_user }}"
+      group: "{{ td_group }}"
+    tags: 
+     - td-agent
+
+  - name: install fluentd td-agent
+    yum:
+      name: td-agent
+      state: latest
+    tags: td-agent
+ 
+  - name: td-agent Install fluentd plugins 
+    gem:
+      name: "{{ item }}"
+      executable: /opt/td-agent/embedded/bin/fluent-gem
+      state: latest
+      user_install: no
+    with_items:
+      - "{{ td_plugins }}"
+    notify: restart td-agent
+    tags: 
+     - td-agent
+     - td_plugins
+  
+  - name: td-agent create server conf path
+    file:
+      path: "{{ td_conf_path }}"
+      state: directory
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0755
+    tags: 
+     - td-agent
+  
+  - name: td-agent create config.d directory
+    file:
+      path: "{{ td_config_d }}"
+      state: directory
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0755
+    tags: 
+     - td-agent
+  
+  - name: td-agent create log directory
+    file:
+      path: "{{ td_log_path }}"
+      state: directory
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0755
+    tags: 
+     - td-agent
+  
+  - name: td-agent create POS directory
+    file:
+      path: "{{ td_pos_path }}"
+      state: directory
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0755
+    tags: 
+     - td-agent
+  
+  - name: td-agent create buffer directory
+    file:
+      path: "{{ td_buffer_path }}"
+      state: directory
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0755
+    tags: 
+     - td-agent
+  
+  # fix permission for /var/log
+  - name: change mode to 0755 for /var/log and 0664 for files, in order fluentd to read the logs
+    file:
+      dest: /var/log
+      mode: u=rwX,g=rwX,o=rX
+      recurse: yes
+    tags: 
+     - td-agent
+     - logs
+  
+  # copy td-agent custom configuration
+  - name: td-agent copy server config
+    copy:
+      src: "files/td-agent.conf"
+      dest: "{{ td_conf_path }}/td-agent.conf"
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0644
+    notify: restart td-agent
+    tags: 
+     - td-agent
+     - config
+
+  - name: Copy forwarder common grok_patterns
+    copy:
+      src: files/grok_patterns.txt
+      dest: /etc/td-agent/grok_patterns.txt
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+    tags:
+     - td-agent
+     - grok
+
+  - name: custom td-agent systemd script, enable --log-rotate-age and log-rotate-size
+    copy:
+      src: "files/td-agent_systemd.service"
+      dest: /lib/systemd/system/td-agent.service
+      owner: "{{ td_user }}"
+      group: "{{ td_group }}"
+      mode: 0755
+    notify: restart td-agent
+    tags:
+     - td-agent
+     - systemd
+  
+  - name: copy td-agent custom forwarder configuration
+    include: forwarder.yml
+    tags: 
+     - td-agent
+     - config
+
+  - name: copy td-agent custom configuration per service
+    include: client.yml
+    tags: 
+     - td-agent
+     - config
+  
+  - name: td-agent Configuring service
+    systemd:
+      name: td-agent
+      state: "{{ td_service_state }}"
+      enabled: "{{ td_service_enabled }}"
+      daemon_reload: yes

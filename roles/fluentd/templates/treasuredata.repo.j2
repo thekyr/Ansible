@@ -1,0 +1,8 @@
+# {{ ansible_managed }}
+
+[TreasurData-{{ td_version }}]
+name=CentOS/RHEL 7 repository for TreasureData {{ td_version }} packages
+baseurl=http://packages.treasuredata.com/{{ td_version }}/redhat/\$releasever/\$basearch
+gpgcheck=1
+gpgkey=https://packages.treasuredata.com/GPG-KEY-td-agent
+enabled=1
