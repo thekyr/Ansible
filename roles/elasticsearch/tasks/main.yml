@@ -1,0 +1,159 @@
+---
+- name: create elasticsearch group
+  group:
+    name: 'elasticsearch'
+    state: present
+
+- name: create elasticsearch user
+  user:
+    name: 'elasticsearch'
+    group: 'elasticsearch'
+
+- name: Ensure Elasticsearch data base_dir is exists.
+  file:
+    path: '{{ es_base_dir }}'
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
+- name: create config dir
+  file:
+    path: '{{ es_cluster_config_dir }}'
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
+- name: make data dir
+  file:
+    path: '{{ es_data_dir }}'
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
+- name: create certs dir
+  file:
+    path: '{{ es_certs_dir }}'
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
+- name: Add Elasticsearch GPG key
+  rpm_key:
+    key: https://packages.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add Elasticsearch repository
+  template:
+    src: elasticsearch.repo.j2
+    dest: /etc/yum.repos.d/elasticsearch.repo
+    mode: 0644
+  tags: repo
+
+- name: Add Curator repository
+  template:
+    src: curator.repo.j2
+    dest: /etc/yum.repos.d/curator.repo
+    mode: 0644
+  tags: repo
+
+- name: Install Elasticsearch packages
+  yum: 
+    name: '{{ es_packages }}'
+    state: present
+
+- name: copy elasticsearch custom configuration files
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/elasticsearch/{{ item }}"
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0644
+    backup: yes
+  with_items:
+    - elasticsearch.yml
+    - jvm.options
+  notify:
+    - restart elasticsearch
+  tags: es_config
+
+- name: copy elasticsearch cert file
+  copy: src={{ item }} dest={{ es_certs_dir }}
+  with_fileglob:
+    - files/elk/certs/elastic-certificates.p12
+  tags: certificates
+
+- name: copy elasticsearch-curator rpm
+  copy: src={{ item }} dest=/tmp
+  with_fileglob:
+    - files/elk/elasticsearch-curator-5.6.0-1.x86_64.rpm
+  tags: packages
+
+- name: install elasticsearch-curator rpms
+  yum:
+    name:
+      - /tmp/elasticsearch-curator-5.6.0-1.x86_64.rpm
+    state: present
+  tags: packages
+
+- name: Start Elasticsearch
+  service: 
+    name: elasticsearch 
+    state: restarted
+    enabled: yes
+
+- name: create curator config directory
+  file:
+    path: '{{ curator_config_dir }}'
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+  when: inventory_hostname == 'elasticsearch-co' 
+  tags: curator
+
+- name: curator config files
+  copy: src=files/elk/curator/{{ item }} dest=/etc/curator/{{ item }}
+  with_items:
+   - curator.yml
+   - action_file.yml
+  when: inventory_hostname == 'elasticsearch-co' 
+  tags: curator
+
+#- name: curator config files
+#  template:
+#    src: "{{ item }}.j2"
+#    dest: "/etc/curator/{{ item }}"
+#    owner: elasticsearch
+#    group: elasticsearch
+#  with_items:
+#   - curator.yml
+#   - action.yml
+#  tags: curator
+
+- cron: name="delete indices" minute="15" hour="04" job="/opt/elasticsearch-curator/curator --config /etc/curator/curator.yml /etc/curator/action_file.yml >/dev/null 2>&1"
+  tags: curator
+   
+- name: change xpack licence to platinum
+  uri:
+    url: http://elasticsearch-1:9200/_xpack/license
+    method: PUT
+    #src: files/elk/dt-license.json
+    user: elastic
+    password: changeme
+    #  headers:
+    #    Content-Type: application/json
+    #    Accept: application/json
+    body: "content={{ lookup('file', 'files/elk/license.json')}}"
+    force_basic_auth: yes
+    status_code: 201
+    body_format: json
+    #return_contents: yes
+    #validate_certs: no
+ #   body_format: json
+  tags: license
+
+#  ignore_errors: true

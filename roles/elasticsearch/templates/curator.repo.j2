@@ -1,0 +1,8 @@
+# {{ ansible_managed }}
+
+[curator-{{ curator_version }}]
+name=CentOS/RHEL 7 repository for Elasticsearch Curator {{ curator_version }} packages
+baseurl=https://packages.elastic.co/curator/{{ curator_version }}/centos/7
+gpgcheck=1
+gpgkey=https://packages.elastic.co/GPG-KEY-elasticsearch
+enabled=0

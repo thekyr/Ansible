@@ -1,0 +1,13 @@
+---
+# vars file for elasticsearch-cluster
+#es_cluster_config_dir: '{{elasticsearch_dir}}/config'
+#
+es_cluster_host_list: '{% if elasticsearch_cluster_hosts.ty == "static" %}{{ elasticsearch_cluster_hosts.hosts }}{% else %}{{ groups[elasticsearch_cluster_hosts.group|default("elasticsearch")] }}{% endif %}'
+#
+es_cluster_quorum: '{{ (elasticsearch_cluster_host_list|length / 2)|int + 1 }}'
+
+#es_package_url: "https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch"
+#sysd_script: "/usr/lib/systemd/system/elasticsearch.service"
+#init_script: "/etc/init.d/elasticsearch"
+supported_xpack_features: ["alerting","monitoring","graph","security"]
+reserved_xpack_users: ["elastic","kibana","logstash_system"]

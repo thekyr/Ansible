@@ -1,0 +1,39 @@
+---
+es_version: '6.x'
+curator_version: "5"
+es_cluster_name: 'sca_elastic'
+es_node_name: "{{ ansible_hostname }}"
+es_base_dir: "/usr/share/elasticsearch"
+es_certs_dir: "/etc/elasticsearch/certs"
+es_cluster_config_dir: "{{ es_base_dir }}/config"
+es_pid_dir: "/var/run/elasticsearch"
+es_data_dir: "/var/lib/elasticsearch"
+curator_config_dir: "/etc/curator/"
+es_logs_dir: "/var/log/elasticsearch"
+es_bind_host: "0.0.0.0"
+es_network_host: "{{ ansible_eth1['ipv4']['address'] }}"
+es_http_port: "9200"
+es_tcp_port: "9300"
+#es_discovery.zen.ping.unicast.hosts: "[{% for host in groups[elasticsearch] -%} {{ hostvars[host][ansible_eth1['ipv4']:9300 }}{%- if not loop.last %}, {% endif -%}{%- endfor %}]"
+es_action_auto_create_index: true
+es_max_open_files: "65536"
+es_max_threads: "{{ 2048 if ( es_version | version_compare('6.0.0', '<')) else 8192 }}"
+es_max_map_count: "262144"
+es_allow_downgrades: "false"
+
+#xpack features needs license
+es_enable_xpack: true
+es_xpack_features: ["alerting","monitoring","graph","ml","security"]
+
+
+java: "{{ es_java | default('java-1.8.0-openjdk.x86_64') }}"
+default_file: "/etc/sysconfig/elasticsearch"
+
+es_packages:
+  - java
+  - elasticsearch
+#  - elasticsearch-curator
+
+# elasticsearch JVM options
+es_jvm_xms: 16g
+es_jvm_xmx: 16g
