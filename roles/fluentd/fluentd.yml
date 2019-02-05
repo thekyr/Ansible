@@ -1,0 +1,9 @@
+---
+- hosts: all
+  user: centos
+  become_user: root
+  become: yes
+  #serial: 1
+
+  roles:
+   - fluentd
